@@ -63,7 +63,9 @@ impl<T: Display + JsonDisplay> CircularBuffer<T> {
             let internal_index = (self.first + index) % self.max_items;
             Some(&self.data[internal_index]);
         }
-        None
+        else {
+            None
+        }
     }
 }
 
