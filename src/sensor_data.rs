@@ -4,6 +4,7 @@ use std::fmt::Display;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use json_display::JsonDisplay;
+use sensors::*;
 
 #[derive(Copy, Clone)]
 pub struct SensorData {
@@ -23,6 +24,10 @@ impl SensorData {
             htu21_temperature,
             htu21_humidity
         }
+    }
+    
+    pub fn create() -> SensorData {
+       	SensorData::new(get_pressure(), get_bmp280_temperature(), get_htu21_temperature(), get_htu21_humidity())
     }
 }
 

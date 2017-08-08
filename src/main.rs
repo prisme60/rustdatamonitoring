@@ -4,6 +4,7 @@ use std::fmt::Display;
 pub mod sensor_data;
 pub mod circular_buffer;
 pub mod json_display;
+pub mod sensors;
 
 use sensor_data::SensorData;
 use circular_buffer::CircularBuffer;
@@ -56,6 +57,8 @@ fn main() {
         Some(data0bis_unwrap) =>  println!("data0bis = {}", data0bis_unwrap),
         None => println!("No data0bis")
     }
+
+    circ_buf.put_item(SensorData::create());
 
     print(&circ_buf);
     write_json(&circ_buf, &mut io::stdout());
