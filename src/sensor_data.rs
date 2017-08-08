@@ -1,3 +1,4 @@
+use std::io;
 use std::fmt;
 use std::fmt::Display;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -49,15 +50,14 @@ impl Display for SensorData {
 }
 
 impl JsonDisplay for SensorData {
-    fn json_item(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
+    fn json_item(&self, w: &mut io::Write) -> io::Result<()> {
+        w.write_fmt(format_args!(
             "{{\"timestamp\": {},\n\"pressure\"  : {:.2},\n\"bmp280Temp\": {:.3},\n\"htu21Temp\" : {:.3},\n\"humidity\"  : {:.2}}}\n",
             convTimeMs!(self.timestamp),
             self.bmp280_pressure * 10.0,
             self.bmp280_temperature as f32 / 1000.0,
             self.htu21_temperature as f32 / 1000.0,
             self.htu21_humidity  as f32 / 1000.0
-        )
+        ))
     }
 }

@@ -1,3 +1,4 @@
+use std::io;
 use std::fmt::Display;
 use json_display::JsonDisplay;
 
@@ -61,11 +62,29 @@ impl<T: Display + JsonDisplay> CircularBuffer<T> {
     pub fn peek_item(&self, index: usize) -> Option<&T> {
         if index < self.valid_items {
             let internal_index = (self.first + index) % self.max_items;
-            Some(&self.data[internal_index]);
+            Some(&self.data[internal_index])
         }
         else {
             None
         }
+    }
+    
+    pub fn write_json_chunk(&self, w: &mut io::Write) -> io::Result<()> {
+        let mut first = true;
+        let mut result : io::Result<()> = Ok(());
+        for data in self {
+            match result {
+                Ok(_) => {
+                    if !first {
+                        let _ = w.write(b",");
+                        first = false
+                    }
+                    result = data.json_item(w);
+                },
+                Err(_) => { println!("error writing json"); }
+            }
+        }
+        result
     }
 }
 

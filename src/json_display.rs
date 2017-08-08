@@ -1,5 +1,5 @@
-use std::fmt;
+use std::io::{Result, Write};
 
 pub trait JsonDisplay {
-    fn json_item(&self, f: &mut fmt::Formatter) -> fmt::Result;
+    fn json_item(&self, f: &mut Write) -> Result<()>;
 }

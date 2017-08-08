@@ -1,3 +1,4 @@
+use std::io;
 use std::fmt::Display;
 
 pub mod sensor_data;
@@ -23,6 +24,12 @@ fn print<T: Display + JsonDisplay>(cb : &CircularBuffer<T>) {
     for data in cb {
         println!("{}", data);
     }
+}
+
+fn write_json<T: Display + JsonDisplay>(cb : &CircularBuffer<T>, w: &mut io::Write) {
+    let _ = w.write(b"[");
+    let _ = cb.write_json_chunk(w);
+    let _ = w.write(b"]\n");
 }
 
 
@@ -51,4 +58,5 @@ fn main() {
     }
 
     print(&circ_buf);
+    write_json(&circ_buf, &mut io::stdout());
 }
