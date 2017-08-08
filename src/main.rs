@@ -1,5 +1,6 @@
 use std::fmt;
 use std::fmt::Display;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug)]
 struct CircularBuffer<T> {
@@ -10,7 +11,7 @@ struct CircularBuffer<T> {
     max_items: usize,
 }
 
-impl<T: Display> CircularBuffer<T> {
+impl<T: Display + JsonDisplay> CircularBuffer<T> {
     pub fn new(size: usize) -> CircularBuffer<T> {
         CircularBuffer {
             first: 0,
@@ -68,7 +69,7 @@ impl<T: Display> CircularBuffer<T> {
 }
 
 // IntToIterator is fully functionnal
-impl<'a, T:'a + Display> IntoIterator for &'a CircularBuffer<T> {
+impl<'a, T:'a + Display + JsonDisplay> IntoIterator for &'a CircularBuffer<T> {
     type Item = &'a T;
     type IntoIter = CircularBufferIterator<'a, T>;
 
@@ -88,7 +89,7 @@ struct CircularBufferIterator<'a, T: 'a> {
     remaining_items: usize,
 }
 
-/* // This constructor is no more nedd, since inToIterator compile
+/* // This constructor is no more need, since inToIterator compile
 impl<'a, T: 'a + Display> CircularBufferIterator<'a, T> {
     fn new(circular_buffer : &'a CircularBuffer<T>) -> CircularBufferIterator<T> {
          CircularBufferIterator {
@@ -118,18 +119,40 @@ impl<'a, T> Iterator for CircularBufferIterator<'a, T> {
 
 #[derive(Copy, Clone)]
 struct SensorData {
-    /*timestamp: std::time::Instant,*/
+    timestamp: std::time::SystemTime,
     bmp280_pressure: f32,
     bmp280_temperature: i32,
     htu21_temperature: i32,
     htu21_humidity: i32,
 }
 
+impl SensorData {
+    pub fn new(bmp280_pressure:f32, bmp280_temperature:i32, htu21_temperature:i32, htu21_humidity:i32) -> SensorData {
+        SensorData {
+            timestamp: SystemTime::now(),
+            bmp280_pressure,
+            bmp280_temperature,
+            htu21_temperature,
+            htu21_humidity
+        }
+    }
+}
+
+macro_rules! convTimeMs {
+    ($systemtime:expr) => {
+        {
+            let since_the_epoch = $systemtime.duration_since(UNIX_EPOCH).expect("Time went backwards");
+            since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1_000_000
+        }
+    }
+}
+
 impl Display for SensorData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "\tpressure  = {}\n\tbmp280Temp= {}\n\thtu21Temp = {}\n\thumidity  = {}\n",
+            "\ttime      = {}\n\tpressure  = {}\n\tbmp280Temp= {}\n\thtu21Temp = {}\n\thumidity  = {}\n",
+            convTimeMs!(self.timestamp),
             self.bmp280_pressure,
             self.bmp280_temperature,
             self.htu21_temperature,
@@ -138,6 +161,23 @@ impl Display for SensorData {
     }
 }
 
+trait JsonDisplay {
+    fn json_item(&self, f: &mut fmt::Formatter) -> fmt::Result;
+}
+
+impl JsonDisplay for SensorData {
+    fn json_item(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{{\"timestamp\": {},\n\"pressure\"  : {:.2},\n\"bmp280Temp\": {:.3},\n\"htu21Temp\" : {:.3},\n\"humidity\"  : {:.2}}}\n",
+            convTimeMs!(self.timestamp),
+            self.bmp280_pressure * 10.0,
+            self.bmp280_temperature as f32 / 1000.0,
+            self.htu21_temperature as f32 / 1000.0,
+            self.htu21_humidity  as f32 / 1000.0
+        )
+    }
+}
 /* // The expected way I want to write my for loop iteration (no more need to call an explicit constructor)
  * // but currently, IntoIterator didn't compile
 fn print<T: Display>(cb : &CircularBuffer<T>) {
@@ -148,7 +188,7 @@ fn print<T: Display>(cb : &CircularBuffer<T>) {
 }
 */
 
-fn print<T: Display>(cb : &CircularBuffer<T>) {
+fn print<T: Display + JsonDisplay>(cb : &CircularBuffer<T>) {
     println!("=================================================");
     for data in cb {
         println!("{}", data);
@@ -158,64 +198,20 @@ fn print<T: Display>(cb : &CircularBuffer<T>) {
 
 fn main() {
     let mut circ_buf = CircularBuffer::<SensorData>::new(5);
-    let data0 = SensorData {
-        bmp280_pressure: 1.0,
-        bmp280_temperature: 11,
-        htu21_temperature: 12,
-        htu21_humidity: 13,
-    };
-    circ_buf.put_item(data0);
-    let data1 = SensorData {
-        bmp280_pressure: 2.0,
-        bmp280_temperature: 21,
-        htu21_temperature: 22,
-        htu21_humidity: 23,
-    };
-    circ_buf.put_item(data1);
-    let data2 = SensorData {
-        bmp280_pressure: 3.0,
-        bmp280_temperature: 31,
-        htu21_temperature: 32,
-        htu21_humidity: 33,
-    };
-    circ_buf.put_item(data2);
-    
+    circ_buf.put_item(SensorData::new(1.0, 11, 12, 13));
+    circ_buf.put_item(SensorData::new(2.0, 21, 22, 23));
+    circ_buf.put_item(SensorData::new(3.0, 31, 32, 33));
+
     print(&circ_buf);
     
-    let data3 = SensorData {
-        bmp280_pressure: 4.0,
-        bmp280_temperature: 41,
-        htu21_temperature: 42,
-        htu21_humidity: 43,
-    };
-    circ_buf.put_item(data3);
-    
-    let data4 = SensorData {
-        bmp280_pressure: 53.0,
-        bmp280_temperature: 51,
-        htu21_temperature: 52,
-        htu21_humidity: 53,
-    };
-    circ_buf.put_item(data4);
+    circ_buf.put_item(SensorData::new(4.0, 41, 42, 43));
+    circ_buf.put_item(SensorData::new(5.0, 51, 52, 53));
     
     print(&circ_buf);
     
     // Theses variables data5 and data6 should be refused, because the circularbuffer is full
-    let data5 = SensorData {
-        bmp280_pressure: 6.0,
-        bmp280_temperature: 61,
-        htu21_temperature: 62,
-        htu21_humidity: 63,
-    };
-    circ_buf.put_item(data5);
-    
-    let data6 = SensorData {
-        bmp280_pressure: 73.0,
-        bmp280_temperature: 71,
-        htu21_temperature: 72,
-        htu21_humidity: 73,
-    };
-    circ_buf.put_item(data6);
+    circ_buf.put_item(SensorData::new(6.0, 61, 62, 63));
+    circ_buf.put_item(SensorData::new(7.0, 71, 72, 73));
     
     print(&circ_buf);
     
