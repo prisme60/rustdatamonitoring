@@ -1,10 +1,12 @@
 use std::io;
 use std::fmt::Display;
+use std::time::SystemTime;
 
 pub mod sensor_data;
 pub mod circular_buffer;
 pub mod json_display;
 pub mod sensors;
+pub mod average;
 
 use sensor_data::SensorData;
 use circular_buffer::CircularBuffer;
@@ -36,20 +38,20 @@ fn write_json<T: Display + JsonDisplay>(cb : &CircularBuffer<T>, w: &mut io::Wri
 
 fn main() {
     let mut circ_buf = CircularBuffer::<SensorData>::new(5);
-    circ_buf.put_item(SensorData::new(1.0, 11, 12, 13));
-    circ_buf.put_item(SensorData::new(2.0, 21, 22, 23));
-    circ_buf.put_item(SensorData::new(3.0, 31, 32, 33));
+    circ_buf.put_item(SensorData::new(SystemTime::now(), 1.0, 11, 12, 13));
+    circ_buf.put_item(SensorData::new(SystemTime::now(), 2.0, 21, 22, 23));
+    circ_buf.put_item(SensorData::new(SystemTime::now(), 3.0, 31, 32, 33));
 
     print(&circ_buf);
     
-    circ_buf.put_item(SensorData::new(4.0, 41, 42, 43));
-    circ_buf.put_item(SensorData::new(5.0, 51, 52, 53));
+    circ_buf.put_item(SensorData::new(SystemTime::now(), 4.0, 41, 42, 43));
+    circ_buf.put_item(SensorData::new(SystemTime::now(), 5.0, 51, 52, 53));
     
     print(&circ_buf);
     
     // Theses variables data5 and data6 should be refused, because the circularbuffer is full
-    circ_buf.put_item(SensorData::new(6.0, 61, 62, 63));
-    circ_buf.put_item(SensorData::new(7.0, 71, 72, 73));
+    circ_buf.put_item(SensorData::new(SystemTime::now(), 6.0, 61, 62, 63));
+    circ_buf.put_item(SensorData::new(SystemTime::now(), 7.0, 71, 72, 73));
     
     print(&circ_buf);
     
