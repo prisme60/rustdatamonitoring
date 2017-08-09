@@ -7,6 +7,7 @@ pub mod circular_buffer;
 pub mod json_display;
 pub mod sensors;
 pub mod average;
+pub mod historic;
 
 use sensor_data::SensorData;
 use circular_buffer::CircularBuffer;

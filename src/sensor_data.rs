@@ -75,8 +75,20 @@ impl JsonDisplay for SensorData {
     }
 }
 
-impl Average<SensorData, SensorCumulatedData> for SensorData {
-    fn cumulate<'a, 'b>(&'a self, cumulated_data : &'b mut SensorCumulatedData) -> &'b SensorCumulatedData {
+impl Average<SensorData> for SensorData {
+    type Acc = SensorCumulatedData;
+    
+    fn empty_cumulator() -> Self::Acc {
+        SensorCumulatedData {
+            timestamp: Duration::new(0, 0),
+            bmp280_pressure: 0.0,
+            bmp280_temperature: 0,
+            htu21_temperature: 0,
+            htu21_humidity: 0,
+        }
+    }
+    
+    fn cumulate<'a, 'b>(&'a self, cumulated_data : &'b mut Self::Acc) -> &'b Self::Acc {
         cumulated_data.timestamp          += self.timestamp;
         cumulated_data.bmp280_pressure    += self.bmp280_pressure as f64;
         cumulated_data.bmp280_temperature += self.bmp280_temperature as i64;
@@ -85,7 +97,7 @@ impl Average<SensorData, SensorCumulatedData> for SensorData {
         cumulated_data
     }
     
-    fn divide(&self, cumulated_data : &SensorCumulatedData, nb_elements : usize) -> SensorData {
+    fn divide(cumulated_data : &Self::Acc, nb_elements : usize) -> SensorData {
         SensorData {
             timestamp:          (cumulated_data.timestamp          / nb_elements as u32),
             bmp280_pressure:    (cumulated_data.bmp280_pressure    / nb_elements as f64) as f32,

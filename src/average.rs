@@ -1,5 +1,7 @@
 
-pub trait Average<T, ACC > {
-    fn cumulate<'a, 'b>(&'a self, cumulated_data : &'b mut ACC) -> &'b ACC;
-    fn divide(&self, cumulated_data : &ACC, nb_elements : usize) -> T;
+pub trait Average<D> {
+    type Acc;
+    fn empty_cumulator() -> Self::Acc;
+    fn cumulate<'a, 'b>(&'a self, cumulated_data : &'b mut Self::Acc) -> &'b Self::Acc;
+    fn divide(cumulated_data : &Self::Acc, nb_elements : usize) -> D;
 }
