@@ -7,21 +7,12 @@ use json_display::JsonDisplay;
 use average::Average;
 use sensors::*;
 
-macro_rules! convTimeMs {
-    ($systemtime:expr) => {
-        {
-            let since_the_epoch = $systemtime.duration_since(UNIX_EPOCH).expect("Time went backwards");
-            since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1_000_000
-        }
-    }
+macro_rules! convTimeEpochDuration {
+    ($systemtime:expr) => { $systemtime.duration_since(UNIX_EPOCH).expect("Time went backwards") }
 }
 
 macro_rules! convDurationMs {
-    ($duration:expr) => {
-        {
-            $duration.as_secs() * 1000 + $duration.subsec_nanos() as u64 / 1_000_000
-        }
-    }
+    ($duration:expr) => { $duration.as_secs() * 1000 + $duration.subsec_nanos() as u64 / 1_000_000 }
 }
 
 #[derive(Copy, Clone)]
@@ -44,7 +35,7 @@ pub struct SensorCumulatedData {
 impl SensorData {
     pub fn new(timestamp:SystemTime, bmp280_pressure:f32, bmp280_temperature:i32, htu21_temperature:i32, htu21_humidity:i32) -> SensorData {
         SensorData {
-            timestamp: timestamp.duration_since(UNIX_EPOCH).expect("Time went backwards"),
+            timestamp: convTimeEpochDuration!(timestamp),
             bmp280_pressure,
             bmp280_temperature,
             htu21_temperature,
