@@ -8,8 +8,25 @@ pub struct Historic<T> {
     limit : usize 
 }
 
+impl<T : JsonDisplay + Display> Historic<T> {
+    pub fn new(size : usize, limit : usize) -> Historic<T> {
+        Historic::<T> {
+            circular_buffer : CircularBuffer::<T>::new(size),
+            limit
+        }
+    }
+    
+    pub fn add(&mut self, element : T) {
+        self.circular_buffer.put_item(element);
+    }
+    
+    pub fn get_nb_items(&self) -> usize {
+        self.circular_buffer.get_nb_items()
+    }
+}
+
 impl<T : JsonDisplay + Display + Average<T>> Historic<T> {
-    pub fn reduce(historics : Vec<Historic<T>>) {
+    pub fn reduce(historics : &mut [Historic<T>]) {
         let mut i = 0;
         let mut average_data = None;
         for mut historic in historics {
