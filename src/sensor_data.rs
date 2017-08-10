@@ -5,7 +5,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use json_display::JsonDisplay;
 use average::Average;
-use sensors::*;
+use sensors;
 
 macro_rules! convTimeEpochDuration {
     ($systemtime:expr) => { $systemtime.duration_since(UNIX_EPOCH).expect("Time went backwards") }
@@ -44,8 +44,24 @@ impl SensorData {
     }
     
     pub fn create() -> SensorData {
-       	SensorData::new(SystemTime::now(), get_pressure(), get_bmp280_temperature(), get_htu21_temperature(), get_htu21_humidity())
+       	SensorData::new(SystemTime::now(), sensors::get_bmp280_pressure(), sensors::get_bmp280_temperature(), sensors::get_htu21_temperature(), sensors::get_htu21_humidity())
     }
+    
+    pub fn get_bmp280_pressure(&self) -> f32 {
+        self.bmp280_pressure
+    }
+
+    pub fn get_bmp280_temperature(&self) -> i32 {
+        self.bmp280_temperature
+    }
+
+    pub fn get_htu21_temperature(&self) -> i32{
+        self.htu21_temperature
+    }
+
+    pub fn get_htu21_humidity(&self) -> i32{
+        self.htu21_humidity
+    }   
 }
 
 impl Display for SensorData {

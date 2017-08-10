@@ -24,7 +24,7 @@ fn get<T>(filename : & str) -> T where T : std::str::FromStr, <T>::Err: std::fmt
     }
 }
 
-pub fn get_pressure() -> f32 {
+pub fn get_bmp280_pressure() -> f32 {
 	get::<f32>("/sys/bus/i2c/devices/i2c-1/1-0076/iio:device1/in_pressure_input")
 }
 
