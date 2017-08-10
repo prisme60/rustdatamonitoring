@@ -1,3 +1,4 @@
+use std::io;
 use average::Average;
 use circular_buffer::CircularBuffer;
 use std::fmt::Display;
@@ -69,6 +70,20 @@ impl<T : JsonDisplay + Display + Average<T>> Historic<T> {
                 break;
             }
         }
+    }
+    
+    pub fn write_json_historics(historics : &mut [Historic<T>], w: &mut io::Write) {
+        let _ = w.write(b"[");
+        let mut first = true;
+        for historic in historics {
+            if !first {
+                let _ = w.write(b",\n");
+            } else {
+                first = false;
+            }
+            let _ = historic.circular_buffer.write_json_chunk(w);
+        }
+        let _ = w.write(b"]\n");
     }
 }
 

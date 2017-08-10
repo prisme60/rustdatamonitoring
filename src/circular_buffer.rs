@@ -77,7 +77,8 @@ impl<T: Display + JsonDisplay> CircularBuffer<T> {
                 Ok(_) => {
                     if !first {
                         let _ = w.write(b",");
-                        first = false
+                    } else {
+                        first = false;
                     }
                     result = data.json_item(w);
                 },
