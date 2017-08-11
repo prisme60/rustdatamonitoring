@@ -1,25 +1,28 @@
-use std::io::prelude::*;
+//use std::io::prelude::*;
 use std::path::Path;
 use std::time::Duration;
 use std::thread;
 use std::thread::sleep;
 use std::thread::JoinHandle;
 use std::fs::remove_file;
-use std::os::unix::net::UnixListener;
+use std::os::unix::net::{UnixListener, UnixStream};
+use std::sync::mpsc::channel;
+use std::sync::mpsc::{Sender, Receiver};
 
 pub struct Server {
     listener : UnixListener,
 }
 
 impl Server {
-    pub fn create_server_thread(socket_path : &'static str) -> JoinHandle<()> {
-        thread::spawn(move || {
+    pub fn create_server_thread(socket_path : &'static str) -> (JoinHandle<()>, Receiver<UnixStream>) {
+        let (tx, rx) = channel::<UnixStream>();
+        (thread::spawn(move || {
             let mut serv = Server::new(socket_path);
-            serv.receive_or_wait();
-        })
+            serv.receive(tx);
+        }), rx)
     }
     
-    pub fn new(socket_path : &str) -> Server {
+    fn new(socket_path : &str) -> Server {
         let socket = Path::new(socket_path);
     
         // Delete old socket if necessary
@@ -39,16 +42,17 @@ impl Server {
         }
     }
     
-    pub fn receive_or_wait(& mut self) {
+    fn receive(& mut self, tx_channel : Sender<UnixStream>) {
         println!("Server started, waiting for clients");
        
         // accept connections and process them
         for stream in self.listener.incoming() {
             match stream {
-                Ok(mut stream) => {
+                Ok(stream) => {
                     /* connection succeeded */
                     println!("Connection succeeded {:?}", stream);
-                    stream.write_all(b"hello world\n").unwrap();
+                    tx_channel.send(stream).unwrap();
+                    //stream.write_all(b"hello world\n").unwrap();
                 }
                 Err(err) => {
                     /* connection failed */

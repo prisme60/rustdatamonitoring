@@ -1,9 +1,12 @@
 use std::io;
 use std::fmt::Display;
-//use std::time::SystemTime;
+use std::time::{Instant, Duration};
+use std::time::SystemTime;
 //use std::thread::Thread;
 //use std::sync::Mutex;
+//use std::sync::mpsc::channel;
 
+#[macro_use]
 pub mod sensor_data;
 pub mod circular_buffer;
 pub mod json_display;
@@ -47,13 +50,19 @@ enum QueuesIndex {
 	DAYS,
 }
 
+// Sampling time in milliceconds
+static SAMPLING_TIME_MS : u64 = 5000;
+
 fn main() { 
+    let sampling_duration_ms = Duration::from_millis(SAMPLING_TIME_MS);
     // array of historic queues of MINUTE, HOUR, DAYS
     let mut historic_queues = [ Historic::<SensorData>::new(32, 24), Historic::<SensorData>::new(128, 120), Historic::<SensorData>::new(9192, 9192)];
-    Server::create_server_thread("mySocket");
+    let (_, rx) = Server::create_server_thread("mySocket");
     println!("Enter loop");
+    let mut i = 0;
     loop {
-		historic_queues[QueuesIndex::MINUTE as usize].add(SensorData::create());
+		//historic_queues[QueuesIndex::MINUTE as usize].add(SensorData::create());
+        historic_queues[QueuesIndex::MINUTE as usize].add(SensorData::new(SystemTime::now(), 1.0 + i as f32, 100000 + i, 200000 + i, 300000 + i));
 		println!("nbElements (MINUTE) = {}\tnbElements (HOUR) = {}\tnbElements (DAYS) = {}\n",
 		historic_queues[QueuesIndex::MINUTE as usize].get_nb_items(),
         historic_queues[QueuesIndex::HOUR as usize].get_nb_items(),
@@ -62,6 +71,16 @@ fn main() {
         Historic::<SensorData>::reduce(& mut historic_queues);
         
         // treatSocket(sockfd, historicQueues, QUEUE_NBELEMENTS);
+        let now = Instant::now();
+        while now.elapsed() <= sampling_duration_ms {
+            match rx.recv_timeout(sampling_duration_ms) {
+                Err(err) => println!("no request {}", err),
+                Ok(mut stream) => {
+                    Historic::<SensorData>::write_json_historics(& historic_queues, &mut stream);
+                }
+            }
+        }
+        i += 1;
     }
 }
 

@@ -24,6 +24,10 @@ impl<T : JsonDisplay + Display> Historic<T> {
     pub fn get_nb_items(&self) -> usize {
         self.circular_buffer.get_nb_items()
     }
+    
+    pub fn is_empty(&self) -> bool {
+        self.circular_buffer.is_empty()
+    }
 }
 
 impl<T : JsonDisplay + Display + Average<T>> Historic<T> {
@@ -72,18 +76,20 @@ impl<T : JsonDisplay + Display + Average<T>> Historic<T> {
         }
     }
     
-    pub fn write_json_historics(historics : &mut [Historic<T>], w: &mut io::Write) {
-        let _ = w.write(b"[");
+    pub fn write_json_historics(historics : &[Historic<T>], w: &mut io::Write) {
+        w.write(b"[").unwrap();
         let mut first = true;
         for historic in historics {
-            if !first {
-                let _ = w.write(b",\n");
-            } else {
-                first = false;
+            if !historic.is_empty() {
+                if !first {
+                    w.write(b",\n").unwrap();;
+                } else {
+                    first = false;
+                }
+                historic.circular_buffer.write_json_chunk(w).unwrap();;
             }
-            let _ = historic.circular_buffer.write_json_chunk(w);
         }
-        let _ = w.write(b"]\n");
+        w.write(b"]\n").unwrap();
     }
 }
 
