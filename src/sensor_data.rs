@@ -11,7 +11,6 @@ macro_rules! convTimeEpochDuration {
     ($systemtime:expr) => { $systemtime.duration_since(UNIX_EPOCH).expect("Time went backwards") }
 }
 
-#[macro_export]
 macro_rules! convDurationMs {
     ($duration:expr) => { $duration.as_secs() * 1000 + $duration.subsec_nanos() as u64 / 1_000_000 }
 }
