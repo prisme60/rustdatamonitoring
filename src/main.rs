@@ -1,8 +1,8 @@
 use std::io;
 use std::fmt::Display;
-use std::time::SystemTime;
-use std::thread::Thread;
-use std::sync::Mutex;
+//use std::time::SystemTime;
+//use std::thread::Thread;
+//use std::sync::Mutex;
 
 pub mod sensor_data;
 pub mod circular_buffer;
@@ -10,11 +10,13 @@ pub mod json_display;
 pub mod sensors;
 pub mod average;
 pub mod historic;
+pub mod server;
 
 use sensor_data::SensorData;
 use circular_buffer::CircularBuffer;
 use json_display::JsonDisplay;
 use historic::Historic;
+use server::Server;
 
 /* // The expected way I want to write my for loop iteration (no more need to call an explicit constructor)
  * // but currently, IntoIterator didn't compile
