@@ -50,6 +50,7 @@ enum QueuesIndex {
 fn main() { 
     // array of historic queues of MINUTE, HOUR, DAYS
     let mut historic_queues = [ Historic::<SensorData>::new(32, 24), Historic::<SensorData>::new(128, 120), Historic::<SensorData>::new(9192, 9192)];
+    Server::create_server_thread("mySocket");
     println!("Enter loop");
     loop {
 		historic_queues[QueuesIndex::MINUTE as usize].add(SensorData::create());
