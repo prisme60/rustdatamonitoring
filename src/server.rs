@@ -8,16 +8,21 @@ use std::fs::remove_file;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender, Receiver};
+use std::sync::Arc;
+
 
 pub struct Server {
     listener : UnixListener,
 }
 
 impl Server {
-    pub fn create_server_thread(socket_path : &'static str) -> (JoinHandle<()>, Receiver<UnixStream>) {
+    pub fn create_server_thread(socket_path : &str) -> (JoinHandle<()>, Receiver<UnixStream>) {
+        // Because it is not a static str, we have to use Arc (A thread-safe reference-counting pointer)
+        let socket_path_share = Arc::new(socket_path.to_string());
+        let socket_path_copy = Arc::clone(&socket_path_share);
         let (tx, rx) = channel::<UnixStream>();
         (thread::spawn(move || {
-            let mut serv = Server::new(socket_path);
+            let mut serv = Server::new(socket_path_copy.as_str());
             serv.receive(tx);
         }), rx)
     }

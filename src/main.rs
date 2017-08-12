@@ -1,4 +1,5 @@
 use std::time::{Instant, Duration};
+use std::env;
 
 #[cfg(test)]
 use std::fmt::Display;
@@ -31,14 +32,22 @@ enum QueuesIndex {
 	DAYS,
 }
 
+const DEFAULT_SOCKET_NAME : &str = "rustSocket";
 // Sampling time in milliceconds
 static SAMPLING_TIME_MS : u64 = 5000;
 
+
 fn main() { 
+    let socket_name = match env::args().nth(1) {
+        Some(arg) => arg,
+        None => DEFAULT_SOCKET_NAME.to_string()
+    };
+    println!("Socket name : {}", socket_name);
+    
     let sampling_duration_ms = Duration::from_millis(SAMPLING_TIME_MS);
     // array of historic queues of MINUTE, HOUR, DAYS
     let mut historic_queues = [ Historic::<SensorData>::new(32, 24), Historic::<SensorData>::new(128, 120), Historic::<SensorData>::new(9192, 9192)];
-    let (_, rx) = Server::create_server_thread("mySocket");
+    let (_, rx) = Server::create_server_thread(socket_name.as_str());
     //println!("Enter loop");
     loop {
 		historic_queues[QueuesIndex::MINUTE as usize].add(SensorData::create());
