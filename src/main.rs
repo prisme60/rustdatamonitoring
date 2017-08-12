@@ -1,9 +1,12 @@
-// use std::io;
-// use std::fmt::Display;
 use std::time::{Instant, Duration};
-// use std::time::SystemTime;
 
-#[macro_use]
+#[cfg(test)]
+use std::fmt::Display;
+#[cfg(test)]
+use std::io;
+#[cfg(test)]
+use std::time::SystemTime;
+
 pub mod sensor_data;
 pub mod circular_buffer;
 pub mod json_display;
@@ -13,41 +16,19 @@ pub mod historic;
 pub mod server;
 
 use sensor_data::SensorData;
-// use circular_buffer::CircularBuffer;
-// use json_display::JsonDisplay;
 use historic::Historic;
 use server::Server;
 
-/* // The expected way I want to write my for loop iteration (no more need to call an explicit constructor)
- * // but currently, IntoIterator didn't compile
-fn print<T: Display>(cb : &CircularBuffer<T>) {
-    println!("=================================================");
-    for data in CircularBufferIterator::new(&cb) {
-        println!("{}", data);
-    }
-}
-*/
+#[cfg(test)]
+use circular_buffer::CircularBuffer;
+#[cfg(test)]
+use json_display::JsonDisplay;
 
-/*
-fn print<T: Display + JsonDisplay>(cb : &CircularBuffer<T>) {
-    println!("=================================================");
-    for data in cb {
-        println!("{}", data);
-    }
-}
-*/
-/*
-fn write_json<T: Display + JsonDisplay>(cb : &CircularBuffer<T>, w: &mut io::Write) {
-    let _ = w.write(b"[");
-    let _ = cb.write_json_chunk(w);
-    let _ = w.write(b"]\n");
-}
-*/
-
+#[allow(dead_code)]
 enum QueuesIndex {
 	MINUTE = 0,
-	// HOUR,
-	// DAYS,
+	HOUR,
+	DAYS,
 }
 
 // Sampling time in milliceconds
@@ -81,6 +62,30 @@ fn main() {
     }
 }
 
+/* // The expected way I want to write my for loop iteration (no more need to call an explicit constructor)
+ * // but currently, IntoIterator didn't compile
+fn print<T: Display>(cb : &CircularBuffer<T>) {
+    println!("=================================================");
+    for data in CircularBufferIterator::new(&cb) {
+        println!("{}", data);
+    }
+}
+*/
+
+#[cfg(test)]
+fn print<T: Display + JsonDisplay>(cb : &CircularBuffer<T>) {
+    println!("=================================================");
+    for data in cb {
+        println!("{}", data);
+    }
+}
+
+#[cfg(test)]
+fn write_json<T: Display + JsonDisplay>(cb : &CircularBuffer<T>, w: &mut io::Write) {
+    let _ = w.write(b"[");
+    let _ = cb.write_json_chunk(w);
+    let _ = w.write(b"]\n");
+}
  
 #[test]
 fn test_circ_buff() {
@@ -124,13 +129,4 @@ fn test_circ_buff() {
     // print(&circ_buf);
     
     write_json(&circ_buf, &mut io::stdout());
-    
-    /*
-    assert!(Duration::from_secs(1) != Duration::from_secs(0));
-    assert_eq!(Duration::from_secs(1) + Duration::from_secs(2),
-               Duration::from_secs(3));
-    assert_eq!(Duration::from_millis(10) + Duration::from_secs(4),
-               Duration::new(4, 10 * 1_000_000));
-    assert_eq!(Duration::from_millis(4000), Duration::new(4, 0));
-    */
 }
