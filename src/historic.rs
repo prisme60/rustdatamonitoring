@@ -34,7 +34,7 @@ impl<T : JsonDisplay + Display + Average<T>> Historic<T> {
     pub fn reduce(historics : &mut [Historic<T>]) {
         //let mut i = 0;
         let mut average_data = None;
-        for mut historic in historics {
+        for historic in historics {
             // look if the previous historic produce an average data to add to the next historic
             match average_data {
                 Some(data) => {historic.circular_buffer.put_item(data);}
@@ -75,11 +75,11 @@ impl<T : JsonDisplay + Display + Average<T>> Historic<T> {
         for historic in historics {
             if !historic.is_empty() {
                 if !first {
-                    w.write(b",\n").unwrap();;
+                    w.write(b",\n").unwrap();
                 } else {
                     first = false;
                 }
-                historic.circular_buffer.write_json_chunk(w).unwrap();;
+                historic.circular_buffer.write_json_chunk(w).unwrap();
             }
         }
         w.write(b"]\n").unwrap();
