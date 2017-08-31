@@ -19,6 +19,7 @@ pub mod server;
 use sensor_data::SensorData;
 use historic::Historic;
 use server::Server;
+use sensors::Sensor;
 
 #[cfg(test)]
 use circular_buffer::CircularBuffer;
@@ -44,13 +45,18 @@ fn main() {
     };
     println!("Socket name : {}", socket_name);
     
+    let sensor_bmp280_pressure = Sensor::probe("/sys/bus/i2c/devices/i2c-1/1-0076/iio:device{}/in_pressure_input").unwrap();
+    let sensor_bmp280_temperature = Sensor::probe("/sys/bus/i2c/devices/i2c-1/1-0076/iio:device{}/in_temp_input").unwrap();
+    let sensor_htu21_temperature = Sensor::probe("/sys/bus/i2c/devices/i2c-1/1-0040/iio:device{}/in_temp_input").unwrap();
+    let sensor_htu21_humidity = Sensor::probe("/sys/bus/i2c/devices/i2c-1/1-0040/iio:device{}/in_humidityrelative_input").unwrap();
+
     let sampling_duration_ms = Duration::from_millis(SAMPLING_TIME_MS);
     // array of historic queues of MINUTE, HOUR, DAYS
     let mut historic_queues = [ Historic::<SensorData>::new(32, 24), Historic::<SensorData>::new(128, 120), Historic::<SensorData>::new(9192, 9192)];
     let (_, rx) = Server::create_server_thread(socket_name.as_str());
     //println!("Enter loop");
     loop {
-		historic_queues[QueuesIndex::MINUTE as usize].add(SensorData::create());
+		historic_queues[QueuesIndex::MINUTE as usize].add(SensorData::create(&sensor_bmp280_pressure, &sensor_bmp280_temperature, &sensor_htu21_temperature, &sensor_htu21_humidity));
 		//println!("nbElements (MINUTE) = {}\tnbElements (HOUR) = {}\tnbElements (DAYS) = {}\n",
 		//historic_queues[QueuesIndex::MINUTE as usize].get_nb_items(),
         //historic_queues[QueuesIndex::HOUR as usize].get_nb_items(),
