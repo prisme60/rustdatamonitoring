@@ -1,4 +1,3 @@
-//use std::io::prelude::*;
 use std::path::Path;
 use std::time::Duration;
 use std::thread;
@@ -8,7 +7,6 @@ use std::fs::remove_file;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{Sender, Receiver};
-use std::sync::Arc;
 
 
 pub struct Server {
@@ -17,9 +15,7 @@ pub struct Server {
 
 impl Server {
     pub fn create_server_thread(socket_path : &str) -> (JoinHandle<()>, Receiver<UnixStream>) {
-        // Because it is not a static str, we have to use Arc (A thread-safe reference-counting pointer)
-        let socket_path_share = Arc::new(socket_path.to_string());
-        let socket_path_copy = Arc::clone(&socket_path_share);
+        let socket_path_copy = socket_path.to_string();
         let (tx, rx) = channel::<UnixStream>();
         (thread::spawn(move || {
             let mut serv = Server::new(socket_path_copy.as_str());
