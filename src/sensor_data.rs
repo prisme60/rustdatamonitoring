@@ -1,18 +1,23 @@
-use std::io;
-use std::fmt;
-use std::fmt::Display;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::{
+    fmt::{self, Display},
+    io,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
-use json_display::JsonDisplay;
-use average::Average;
-use sensors::Sensor;
+use crate::{average::Average, json_display::JsonDisplay, sensors::Sensor};
 
 macro_rules! convTimeEpochDuration {
-    ($systemtime:expr) => { $systemtime.duration_since(UNIX_EPOCH).expect("Time went backwards") }
+    ($systemtime:expr) => {
+        $systemtime
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+    };
 }
 
 macro_rules! convDurationMs {
-    ($duration:expr) => { $duration.as_secs() * 1000 + $duration.subsec_nanos() as u64 / 1_000_000 }
+    ($duration:expr) => {
+        $duration.as_secs() * 1000 + $duration.subsec_nanos() as u64 / 1_000_000
+    };
 }
 
 #[derive(Copy, Clone)]
@@ -29,24 +34,41 @@ pub struct SensorCumulatedData {
     bmp280_pressure: f64,
     bmp280_temperature: i64,
     htu21_temperature: i64,
-    htu21_humidity: i64,    
+    htu21_humidity: i64,
 }
 
 impl SensorData {
-    pub fn new(timestamp:SystemTime, bmp280_pressure:f32, bmp280_temperature:i32, htu21_temperature:i32, htu21_humidity:i32) -> SensorData {
+    pub fn new(
+        timestamp: SystemTime,
+        bmp280_pressure: f32,
+        bmp280_temperature: i32,
+        htu21_temperature: i32,
+        htu21_humidity: i32,
+    ) -> SensorData {
         SensorData {
             timestamp: convTimeEpochDuration!(timestamp),
             bmp280_pressure,
             bmp280_temperature,
             htu21_temperature,
-            htu21_humidity
+            htu21_humidity,
         }
     }
-    
-    pub fn create(sensor_bmp280_pressure : &Sensor, sensor_bmp280_temperature : &Sensor, sensor_htu21_temperature : &Sensor, sensor_htu21_humidity : &Sensor) -> SensorData {
-       	SensorData::new(SystemTime::now(), sensor_bmp280_pressure.get::<f32>(), sensor_bmp280_temperature.get::<i32>(), sensor_htu21_temperature.get::<i32>(), sensor_htu21_humidity.get::<i32>())
+
+    pub fn create(
+        sensor_bmp280_pressure: &Sensor,
+        sensor_bmp280_temperature: &Sensor,
+        sensor_htu21_temperature: &Sensor,
+        sensor_htu21_humidity: &Sensor,
+    ) -> SensorData {
+        SensorData::new(
+            SystemTime::now(),
+            sensor_bmp280_pressure.get::<f32>(),
+            sensor_bmp280_temperature.get::<i32>(),
+            sensor_htu21_temperature.get::<i32>(),
+            sensor_htu21_humidity.get::<i32>(),
+        )
     }
-    
+
     pub fn get_bmp280_pressure(&self) -> f32 {
         self.bmp280_pressure
     }
@@ -55,13 +77,13 @@ impl SensorData {
         self.bmp280_temperature
     }
 
-    pub fn get_htu21_temperature(&self) -> i32{
+    pub fn get_htu21_temperature(&self) -> i32 {
         self.htu21_temperature
     }
 
-    pub fn get_htu21_humidity(&self) -> i32{
+    pub fn get_htu21_humidity(&self) -> i32 {
         self.htu21_humidity
-    }   
+    }
 }
 
 impl Display for SensorData {
@@ -93,7 +115,7 @@ impl JsonDisplay for SensorData {
 
 impl Average<SensorData> for SensorData {
     type Acc = SensorCumulatedData;
-    
+
     fn empty_cumulator() -> Self::Acc {
         SensorCumulatedData {
             timestamp: Duration::new(0, 0),
@@ -103,23 +125,23 @@ impl Average<SensorData> for SensorData {
             htu21_humidity: 0,
         }
     }
-    
-    fn cumulate<'a, 'b>(&'a self, cumulated_data : &'b mut Self::Acc) -> &'b Self::Acc {
-        cumulated_data.timestamp          += self.timestamp;
-        cumulated_data.bmp280_pressure    += self.bmp280_pressure as f64;
+
+    fn cumulate<'a, 'b>(&'a self, cumulated_data: &'b mut Self::Acc) -> &'b Self::Acc {
+        cumulated_data.timestamp += self.timestamp;
+        cumulated_data.bmp280_pressure += self.bmp280_pressure as f64;
         cumulated_data.bmp280_temperature += self.bmp280_temperature as i64;
-        cumulated_data.htu21_temperature  += self.htu21_temperature as i64;
-        cumulated_data.htu21_humidity     += self.htu21_humidity as i64;
+        cumulated_data.htu21_temperature += self.htu21_temperature as i64;
+        cumulated_data.htu21_humidity += self.htu21_humidity as i64;
         cumulated_data
     }
-    
-    fn divide(cumulated_data : &Self::Acc, nb_elements : usize) -> SensorData {
+
+    fn divide(cumulated_data: &Self::Acc, nb_elements: usize) -> SensorData {
         SensorData {
-            timestamp:          (cumulated_data.timestamp          / nb_elements as u32),
-            bmp280_pressure:    (cumulated_data.bmp280_pressure    / nb_elements as f64) as f32,
+            timestamp: (cumulated_data.timestamp / nb_elements as u32),
+            bmp280_pressure: (cumulated_data.bmp280_pressure / nb_elements as f64) as f32,
             bmp280_temperature: (cumulated_data.bmp280_temperature / nb_elements as i64) as i32,
-            htu21_temperature:  (cumulated_data.htu21_temperature  / nb_elements as i64) as i32,
-            htu21_humidity:     (cumulated_data.htu21_humidity     / nb_elements as i64) as i32
+            htu21_temperature: (cumulated_data.htu21_temperature / nb_elements as i64) as i32,
+            htu21_humidity: (cumulated_data.htu21_humidity / nb_elements as i64) as i32,
         }
-    }   
+    }
 }

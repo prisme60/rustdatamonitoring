@@ -1,6 +1,5 @@
-use std::io;
-use std::fmt::Display;
-use json_display::JsonDisplay;
+use crate::json_display::JsonDisplay;
+use std::{fmt::Display, io};
 
 #[derive(Debug)]
 pub struct CircularBuffer<T> {
@@ -63,15 +62,14 @@ impl<T: Display + JsonDisplay> CircularBuffer<T> {
         if index < self.valid_items {
             let internal_index = (self.first + index) % self.max_items;
             Some(&self.data[internal_index])
-        }
-        else {
+        } else {
             None
         }
     }
-    
+
     pub fn write_json_chunk(&self, w: &mut io::Write) -> io::Result<()> {
         let mut first = true;
-        let mut result : io::Result<()> = Ok(());
+        let mut result: io::Result<()> = Ok(());
         for data in self {
             match result {
                 Ok(_) => {
@@ -81,8 +79,10 @@ impl<T: Display + JsonDisplay> CircularBuffer<T> {
                         first = false;
                     }
                     result = data.json_item(w);
-                },
-                Err(_) => { println!("error writing json"); }
+                }
+                Err(_) => {
+                    println!("error writing json");
+                }
             }
         }
         result
@@ -90,19 +90,18 @@ impl<T: Display + JsonDisplay> CircularBuffer<T> {
 }
 
 // IntToIterator is fully functionnal
-impl<'a, T:'a + Display + JsonDisplay> IntoIterator for &'a CircularBuffer<T> {
+impl<'a, T: 'a + Display + JsonDisplay> IntoIterator for &'a CircularBuffer<T> {
     type Item = &'a T;
     type IntoIter = CircularBufferIterator<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
         CircularBufferIterator {
-            circular_buffer : self,
-            current_index : self.first,
-            remaining_items : self.get_nb_items()
+            circular_buffer: self,
+            current_index: self.first,
+            remaining_items: self.get_nb_items(),
         }
     }
 }
-
 
 pub struct CircularBufferIterator<'a, T: 'a> {
     circular_buffer: &'a CircularBuffer<T>,
@@ -124,15 +123,14 @@ impl<'a, T: 'a + Display> CircularBufferIterator<'a, T> {
 
 impl<'a, T> Iterator for CircularBufferIterator<'a, T> {
     type Item = &'a T;
-    
+
     fn next(&mut self) -> Option<&'a T> {
         if self.remaining_items > 0 {
             let current_index_before_update = self.current_index;
             self.current_index = (self.current_index + 1) % self.circular_buffer.max_items;
             self.remaining_items -= 1;
             Some(&self.circular_buffer.data[current_index_before_update])
-        }
-        else {
+        } else {
             None
         }
     }
